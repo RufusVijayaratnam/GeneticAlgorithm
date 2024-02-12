@@ -1,7 +1,10 @@
 #ifndef crossover_functions_hpp
 #define crossover_functions_hpp
-#include <memory>
 class Phenotype;
 class TSP_Points;
-void simpleCrossover(std::vector<Phenotype>& solutions);
+class Population;
+namespace Variation {
+    void simpleCrossover(std::vector<Phenotype>& solutions);
+    void orderedCrossover(Population& population);
+}
 #endif

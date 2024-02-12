@@ -2,10 +2,13 @@
 #include <time.h>
 #include <random>
 #include <algorithm>
+#include <iostream>
+#include <unordered_set>
 #include "phenotype.hpp"
 #include "crossoverFunctions.hpp"
+#include "Population.hpp"
 
-void simpleCrossover(std::vector<Phenotype>& solutions) {
+void Variation::simpleCrossover(std::vector<Phenotype>& solutions) {
     using namespace std;
     static bool seeded = false;
     default_random_engine randomEngine;
@@ -50,4 +53,53 @@ void simpleCrossover(std::vector<Phenotype>& solutions) {
         solutions.push_back(child2);
     }
 
+}
+
+void Variation::orderedCrossover(Population& population) {
+    std::vector<int> selected = population.getSelected();
+    int numSelected = selected.size();
+    if(numSelected < 2) {
+        std::cerr << "Variation::orderedCrossover\nCan't have n < 2 for ordered crossover\n";
+    }
+
+    int permutationSize = population.getPopulationMember(0).getPermutationSize();
+    
+    static bool seeded = false;
+    if(!seeded) {
+        time_t ct = time(NULL);
+        srand(ct);
+        seeded = true;
+    }
+
+    for(int p = 0; p < numSelected - 1; p *= 2) {
+        //Generate random number between 1 and n - 2 inclusive
+        int a = rand() % permutationSize;
+        int b = rand() % permutationSize;
+        int j1, j2, k;
+        j1 = b + 1; j2 = b + 1; k = b + 1;
+
+        std::vector<int> parent1 = population.getPopulationMember(p).getPermutation();
+        std::vector<int> child1 = std::vector<int>(permutationSize, 0);
+        std::vector<int> parent2 = population.getPopulationMember(p + 1).getPermutation();
+        std::vector<int> child2 = std::vector<int>(permutationSize, 0);
+        std::unordered_set<int> parent1MidRange;
+        std::unordered_set<int> parent2MidRange;
+        for(int m = a; m <= b; m++) {
+            parent1MidRange.insert(parent1[m]);
+            child1[m] = parent2[m];
+            parent2MidRange.insert(parent2[m]);
+            child2[m] = parent1[m];
+        }
+        for(int i = 0; i < permutationSize; i++) {
+            if(parent2MidRange.find(parent1[i]) == parent2MidRange.end()) {
+                child1[j1 % permutationSize] = parent1[k % permutationSize];
+                j1++;
+            }
+            if(parent1MidRange.find(parent2[i]) == parent1MidRange.end()) {
+                child2[j2 % permutationSize] = parent2[k % permutationSize];
+                j2++;
+            }
+            k++;
+        }
+    }
 }

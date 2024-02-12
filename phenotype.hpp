@@ -9,7 +9,7 @@ class Phenotype {
         double getScore() const;
         std::shared_ptr<TSP_Points> getPointsPtr();
         std::vector<int> getPermutation();
-        int getPermutationSize();
+        int getPermutationSize() const;
         bool operator<(const Phenotype& b) const;
         bool operator>(const Phenotype& b) const;
         void printScoreInline() const;

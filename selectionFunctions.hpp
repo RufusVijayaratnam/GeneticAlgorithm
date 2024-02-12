@@ -3,10 +3,10 @@
 #include <memory>
 class Phenotype;
 class TSP_Points;
+class Population;
 namespace Selection {
-void linearRankingSelection(std::vector<Phenotype>& solutions);
-bool linearRankingShouldReject(int M, int gamma, double alpha, double beta);
-void truncateSelection(std::vector<Phenotype>& solutions, int n);
+void linearRankingSelection(Population& population, int numToSelect);
+void truncateSelection(Population& population, int numToSelect);
 void setVerbosity(bool verbosity);
 extern bool verbose;
 }

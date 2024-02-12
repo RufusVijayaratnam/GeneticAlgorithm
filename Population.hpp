@@ -27,12 +27,12 @@ class Population {
             return this->isMinimisation;
         }
 
-        /// @brief Sorts the underlying population in the order worst -> best
+        /// @brief Sorts the underlying population in the order best -> worst
         void sort() {
             if(isMinimisation) {
-                this->sortDescending();
-            } else {
                 this->sortAscending();
+            } else {
+                this->sortDescending();
             }
         }
 

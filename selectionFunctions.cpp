@@ -11,29 +11,42 @@
 /// @param n Number of individuals to select for variation
 void Selection::linearRankingSelection(Population& population, int numToSelect) {
     using namespace std;
+    if(verbose) cout << "linearRankingSelection\n";
     population.clearSelected();
     int M = population.size();
     if(M < numToSelect) {
         cerr << "linearRankingSelection:\ncannot select more individuals than total population size\n";
         exit(-1);
     }
-    static random_device rd;
-    static mt19937 gen(rd);
 
     double beta = 1.5;
     double alpha = 2 - beta;
     population.sort();
+    if(verbose) {
+        cout << "after sorting\n";
+        population.printScoresInline();
+        cout << "\n";
+    }
     vector<int> ranks = vector<int>(population.size());
-    vector<int> probabilities = vector<int>(population.size());
+    vector<double> probabilities = vector<double>(population.size());
     iota(ranks.begin(), ranks.end(), 0);
+    double sum = 0;
+    if(verbose) cout << "Probabilities: ";
     for(int rank : ranks) {
         probabilities[rank] = double(alpha + (beta - alpha) * double(rank) / double(M - 1)) / double(M);
+        sum += probabilities[rank];
+        if(verbose) cout << probabilities[rank] << ", ";
     }
+    if(verbose) cout << "\n";
+    if(verbose) cout << "Sum of probabilities = " << sum << "\n";
 
     population.reserveSelected(numToSelect);
-    discrete_distribution distribution(probabilities.begin(), probabilities.end());
+    default_random_engine generator;
+    discrete_distribution<int> dist(probabilities.begin(), probabilities.end());
     for(int i = 0; i < numToSelect; i++) {
-        population.select(distribution(gen));
+        int selected = dist(generator);
+        if(verbose) cout << "selected member: " << selected << "\n";
+        population.select(dist(generator));
     }
 }
 

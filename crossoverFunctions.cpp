@@ -71,10 +71,10 @@ void Variation::orderedCrossover(Population& population) {
         seeded = true;
     }
 
-    for(int p = 0; p < numSelected - 1; p *= 2) {
+    for(int p = 0; p < numSelected - 1; p += 2) {
         //Generate random number between 1 and n - 2 inclusive
         int a = rand() % permutationSize;
-        int b = rand() % permutationSize;
+        int b = rand() % (permutationSize - a) + a;
         int j1, j2, k;
         j1 = b + 1; j2 = b + 1; k = b + 1;
 
@@ -101,5 +101,9 @@ void Variation::orderedCrossover(Population& population) {
             }
             k++;
         }
+        Phenotype child1Pheno = Phenotype(child1, population.getPopulationMember(0).getPointsPtr());
+        Phenotype child2Pheno = Phenotype(child2, population.getPopulationMember(0).getPointsPtr());
+        population.addPopulationMember(child1Pheno);
+        population.addPopulationMember(child2Pheno);
     }
 }

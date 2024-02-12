@@ -3,7 +3,8 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
-class Phenotype;
+#include <ostream>
+#include "phenotype.hpp"
 class Population {
     public:
         //Default constructor
@@ -12,7 +13,11 @@ class Population {
         void setPopulation(std::vector<Phenotype> population) {
             this->population = population;
         }
-        const Phenotype& operator[](int i) const {return this->population[i];}
+
+        Phenotype getPopulationMember(int n) {
+            return population[n];
+        }
+
         int size() const {return this->population.size();}
 
         void setMinOrMax(bool isMinimisation) {
@@ -41,6 +46,27 @@ class Population {
         /// @param n Index of population element to select
         void select(int n) {
             selected.push_back(n);
+        }
+
+        /// @brief Clear the selected vector
+        void clearSelected() {
+            selected.clear();
+        }
+
+        /// @brief Get copy of selected vector
+        /// @return vector<int> of selected population members
+        std::vector<int> getSelected() {
+            return selected;
+        }
+
+        void addPopulationMember(Phenotype member) {
+            population.push_back(member);
+        }
+
+        void printScoresInline() {
+            for(auto m : population) {
+                m.printScoreInline();
+            }
         }
 
     private:

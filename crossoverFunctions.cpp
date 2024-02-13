@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <unordered_set>
+#include <iomanip>
 #include "phenotype.hpp"
 #include "crossoverFunctions.hpp"
 #include "Population.hpp"
@@ -84,19 +85,21 @@ void Variation::orderedCrossover(Population& population) {
         std::vector<int> child2 = std::vector<int>(permutationSize, 0);
         std::unordered_set<int> parent1MidRange;
         std::unordered_set<int> parent2MidRange;
+   
         for(int m = a; m <= b; m++) {
             parent1MidRange.insert(parent1[m]);
-            child1[m] = parent2[m];
+            child1[m] = parent1[m];
             parent2MidRange.insert(parent2[m]);
-            child2[m] = parent1[m];
+            child2[m] = parent2[m];
         }
+
         for(int i = 0; i < permutationSize; i++) {
-            if(parent2MidRange.find(parent1[i]) == parent2MidRange.end()) {
-                child1[j1 % permutationSize] = parent1[k % permutationSize];
+            if(parent1MidRange.find(parent2[k % permutationSize]) == parent1MidRange.end()) {
+                child1[j1 % permutationSize] = parent2[k % permutationSize];
                 j1++;
             }
-            if(parent1MidRange.find(parent2[i]) == parent1MidRange.end()) {
-                child2[j2 % permutationSize] = parent2[k % permutationSize];
+            if(parent2MidRange.find(parent1[k % permutationSize]) == parent2MidRange.end()) {
+                child2[j2 % permutationSize] = parent1[k % permutationSize];
                 j2++;
             }
             k++;
@@ -105,5 +108,48 @@ void Variation::orderedCrossover(Population& population) {
         Phenotype child2Pheno = Phenotype(child2, population.getPopulationMember(0).getPointsPtr());
         population.addPopulationMember(child1Pheno);
         population.addPopulationMember(child2Pheno);
+
+
+        if(verbose) {
+            std::cout << "a = " << a << ", b = " << b << "\n";
+
+            std::cout << std::setw(10) << "indicies:";
+            for(int i = 0; i < permutationSize; i++) {
+                std::cout << std::setw(4) << i << ",";
+            }
+            std::cout << "\n";
+            std::cout << std::setw(10) << "parent1:";
+            population.getPopulationMember(p).printPermutationInline();
+            std::cout << std::setw(10) << "parent2:";
+            population.getPopulationMember(p + 1).printPermutationInline();
+            std::cout << std::setw(10) << "midrange1:";
+            for(int i = 0; i < permutationSize; i++) {
+                if(i >= a && i <= b) {
+                    std::cout << std::setw(4) << parent1[i] << ",";
+                } else {
+                    std::cout << std::setw(4) << "--" << ",";
+                }
+            }
+            std::cout << "\n";
+            std::cout << std::setw(10) << "midrange2:";
+            for(int i = 0; i < permutationSize; i++) {
+                if(i >= a && i <= b) {
+                    std::cout << std::setw(4) << parent2[i] << ",";
+                } else {
+                    std::cout << std::setw(4) << "--" << ",";
+                }
+            }
+            std::cout << "\n";
+            std::cout << std::setw(10) << "child1:";
+            child1Pheno.printPermutationInline();
+            std::cout << std::setw(10) << "child2:";
+            child2Pheno.printPermutationInline();
+        }
+
     }
+}
+
+bool Variation::verbose = false;
+void Variation::setVerbosity(bool verbosity) {
+    verbose = verbosity;
 }

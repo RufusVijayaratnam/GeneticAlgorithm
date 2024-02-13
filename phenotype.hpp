@@ -14,6 +14,7 @@ class Phenotype {
         bool operator>(const Phenotype& b) const;
         void printScoreInline() const;
         void printScoreNewLine() const;
+        void printPermutationInline() const;
     private:
         int permutationSize;
         double score;

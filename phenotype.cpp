@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <iomanip>
 #include "phenotype.hpp"
 #include "points.hpp"
 
@@ -12,8 +13,8 @@ Phenotype::Phenotype() {}
 
 double Phenotype::evaluateTSP(std::vector<int>& permutation) {
     int m = pointsPtr->points.size();
-    if(permutationSize != m - 1) {
-        std::cout << "vector permutation.size() must be one smaller than pointsPtr->points.size() but it is not\n";
+    if(permutationSize != m) {
+        std::cout << "vector permutation.size() must equal to pointsPtr->points.size() but it is not\n";
         exit(1);
     }
     double pathLength = 0;
@@ -66,4 +67,11 @@ void Phenotype::printScoreInline() const {
 
 void Phenotype::printScoreNewLine() const {
     std::cout << score << "\n";
+}
+
+void Phenotype::printPermutationInline() const {
+    for(auto p : permutation) {
+        std::cout << std::setw(4) << p << ",";
+    }
+    std::cout << "\n";
 }

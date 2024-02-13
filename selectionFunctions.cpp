@@ -33,7 +33,7 @@ void Selection::linearRankingSelection(Population& population, int numToSelect) 
     double sum = 0;
     if(verbose) cout << "Probabilities: ";
     for(int rank : ranks) {
-        probabilities[M - rank - 1] = double(alpha + (beta - alpha) * double(rank) / double(M - 1)) / double(M);
+        probabilities[double(M) - rank - 1] = double(alpha + (beta - alpha) * double(rank) / double(M - 1)) / double(M);
         sum += probabilities[rank];
         if(verbose) cout << probabilities[rank] << ", ";
     }

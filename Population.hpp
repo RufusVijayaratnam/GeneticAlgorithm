@@ -69,6 +69,11 @@ class Population {
             }
         }
 
+        /// @brief Resizes the population vector to have n elements
+        /// @param n Length of vector after resizing
+        void resizePopulation(int n) {
+            population.resize(n);
+        }
     private:
         std::vector<Phenotype> population;
         std::vector<int> selected;

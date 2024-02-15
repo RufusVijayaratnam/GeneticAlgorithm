@@ -4,6 +4,7 @@
 #include <functional>
 #include <algorithm>
 #include <ostream>
+#include <unordered_set>
 #include "phenotype.hpp"
 class Population {
     public:
@@ -14,7 +15,10 @@ class Population {
             this->population = population;
         }
 
-        Phenotype getPopulationMember(int n) {
+        /// @brief Gets a reference to population member
+        /// @param n Index of population member to get
+        /// @return A reference to a population member (Phenotype&)
+        Phenotype& getPopulationMember(int n) {
             return population[n];
         }
 
@@ -73,6 +77,19 @@ class Population {
         /// @param n Length of vector after resizing
         void resizePopulation(int n) {
             population.resize(n);
+        }
+
+
+        /// @brief Counts the number of unique population members, useful to
+        /// check if getting stuck in local minima. Warning:
+        /// computationally expensive
+        /// @return Number of unique population members
+        int countUnique() {
+            std::unordered_set<Phenotype> s;
+            for(auto member : population) {
+                s.insert(member);
+            }
+            return s.size();
         }
     private:
         std::vector<Phenotype> population;

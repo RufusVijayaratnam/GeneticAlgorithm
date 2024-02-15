@@ -19,8 +19,8 @@ double Phenotype::evaluateTSP(std::vector<int>& permutation) {
     }
     double pathLength = 0;
     int cx, cy;
-    cx = pointsPtr->points[0].first;
-    cy = pointsPtr->points[0].second;
+    cx = pointsPtr->points[permutation[0]].first;
+    cy = pointsPtr->points[permutation[0]].second;
     for(int i = 1; i < permutationSize; i++) {
         int idx = permutation[i];
         int nx, ny;
@@ -31,10 +31,19 @@ double Phenotype::evaluateTSP(std::vector<int>& permutation) {
         cy = ny;
     }
     int nx, ny;
-    nx = pointsPtr->points[0].first;
-    ny = pointsPtr->points[0].second;
+    nx = pointsPtr->points[permutation[0]].first;
+    ny = pointsPtr->points[permutation[0]].second;
     pathLength += sqrt(pow(double(nx - cx), 2.0) + pow(double(ny - cy), 2.0));
     return pathLength;
+}
+
+void Phenotype::setPermutation(std::vector<int> newPermutation) {
+    if(newPermutation.size() != permutationSize) {
+        std::cerr << "New permutation size must be equal to old permutation size\n";
+        exit(-1);
+    }
+    permutation = newPermutation;
+    score = evaluateTSP(permutation);
 }
 
 double Phenotype::getScore() const {
@@ -45,7 +54,7 @@ std::shared_ptr<TSP_Points> Phenotype::getPointsPtr() {
     return pointsPtr;
 }
 
-std::vector<int> Phenotype::getPermutation() {
+std::vector<int> Phenotype::getPermutation() const {
     return permutation;
 }
 
@@ -59,6 +68,31 @@ bool Phenotype::operator<(const Phenotype& b) const {
 
 bool Phenotype::operator>(const Phenotype& b) const {
     return score > b.getScore();
+}
+
+bool Phenotype::operator==(const Phenotype& b) const {
+    //Compares the sequence starting from 0 in each, as start and end is not
+    //relevant, only the relative order
+    if(b.getPermutationSize() != permutationSize) {
+        std::cerr << "Must have same permutation size\n";
+        exit(-1);
+    }
+    int aZeroIdx, bZeroIdx;
+    std::vector<int> bPerm = b.getPermutation();
+    bZeroIdx = 0;
+    while(bPerm[bZeroIdx] != 0) {
+        bZeroIdx++;
+    }
+    aZeroIdx = 0;
+    while(permutation[aZeroIdx] != 0) {
+        aZeroIdx++;
+    }
+    for(int i = 0; i < permutationSize; i++, aZeroIdx++, bZeroIdx++) {
+        if(permutation[aZeroIdx % permutationSize] != bPerm[bZeroIdx % permutationSize]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void Phenotype::printScoreInline() const {

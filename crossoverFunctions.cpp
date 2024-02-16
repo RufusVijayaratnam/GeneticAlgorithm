@@ -8,6 +8,7 @@
 #include "phenotype.hpp"
 #include "crossoverFunctions.hpp"
 #include "Population.hpp"
+#include "GeneticAlgorithm.hpp"
 
 void Variation::simpleCrossover(std::vector<Phenotype>& solutions) {
     using namespace std;
@@ -72,7 +73,7 @@ void Variation::orderedCrossover(Population& population) {
         seeded = true;
     }
 
-    for(int p = 0; p < numSelected - 1; p += 2) {
+    for(int p = 0; p < numSelected - 1 && !shouldTerminateGA; p += 2) {
         //Generate random number between 1 and n - 2 inclusive
         int a = rand() % permutationSize;
         int b = rand() % (permutationSize - a) + a;

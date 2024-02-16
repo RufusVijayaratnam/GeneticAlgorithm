@@ -4,6 +4,7 @@
 #include <iomanip>
 #include "phenotype.hpp"
 #include "points.hpp"
+#include "GeneticAlgorithm.hpp"
 
 Phenotype::Phenotype(std::vector<int> permutation, std::shared_ptr<TSP_Points> pointsPtr) : permutation(permutation), pointsPtr(pointsPtr), permutationSize(permutation.size()) {
     score = evaluateTSP(permutation);
@@ -12,6 +13,10 @@ Phenotype::Phenotype(std::vector<int> permutation, std::shared_ptr<TSP_Points> p
 Phenotype::Phenotype() {}
 
 double Phenotype::evaluateTSP(std::vector<int>& permutation) {
+    Phenotype::objectiveFunctionCount++;
+    if(objectiveFunctionCount >= OBJECTIVE_FUNCTION_MAX_CALL) {
+        shouldTerminateGA = true;
+    }
     int m = pointsPtr->points.size();
     if(permutationSize != m) {
         std::cout << "vector permutation.size() must equal to pointsPtr->points.size() but it is not\n";

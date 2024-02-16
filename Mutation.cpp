@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 #include <time.h>
+#include "GeneticAlgorithm.hpp"
 
 bool Variation::mutationRateSet = false;
 double Variation::mutationRate = 0;
@@ -24,7 +25,7 @@ void Variation::rotationToRight(Population& population) {
         seeded = true;
     }
     int permutationSize = population.getPopulationMember(0).getPermutationSize();
-    for(int p = 0; p < population.size(); p++) {
+    for(int p = 0; p < population.size() && !shouldTerminateGA; p++) {
         double mutationProbability = double(rand()) / double(RAND_MAX);
         if(mutationProbability > mutationRate) continue;
         int i, j, k;

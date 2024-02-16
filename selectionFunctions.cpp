@@ -5,6 +5,7 @@
 #include "phenotype.hpp"
 #include "selectionFunctions.hpp"
 #include "Population.hpp"
+#include "GeneticAlgorithm.hpp"
 
 /// @brief Selects n individuals from the population for reproduction
 /// @param population The population

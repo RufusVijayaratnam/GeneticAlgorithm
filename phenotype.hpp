@@ -6,6 +6,7 @@ class Phenotype {
     public:
         Phenotype(std::vector<int> permutation, std::shared_ptr<TSP_Points> pointsPtr);
         Phenotype();
+        static int objectiveFunctionCount;
         double getScore() const;
         std::shared_ptr<TSP_Points> getPointsPtr();
         std::vector<int> getPermutation() const;

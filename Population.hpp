@@ -1,43 +1,35 @@
 #ifndef Population_hpp
 #define Population_hpp
 #include <vector>
-#include <functional>
 #include <algorithm>
 #include <ostream>
 #include <unordered_set>
-#include "phenotype.hpp"
-class Population {
+#include <memory>
+#include <string>
+#include "CheckHashable.hpp"
+class Phenotype;
+class Objective;
+template<typename T> class Population {
     public:
-        //Default constructor
-        Population();
-        Population(std::vector<Phenotype> population) : population(population) {}
-        void setPopulation(std::vector<Phenotype> population) {
+        Population(std::vector<Phenotype<T>> population, std::unique_ptr<Objective> objective) : population(population), objective(objective) {}
+        void setPopulation(std::vector<Phenotype<T>> population) {
             this->population = population;
         }
 
-        /// @brief Gets a reference to population member
+        /// @brief Gets a const reference to population member
         /// @param n Index of population member to get
-        /// @return A reference to a population member (Phenotype&)
-        Phenotype& getPopulationMember(int n) {
+        /// @return A reference to a population member (Phenotype<T>&)
+        const Phenotype<T>& operator[](int n) const {
             return population[n];
         }
 
+        /// @brief Returns the size of the population
+        /// @return 
         int size() const {return this->population.size();}
-
-        void setMinOrMax(bool isMinimisation) {
-            this->isMinimisation = isMinimisation;
-        }
-        bool getMinOrMax() {
-            return this->isMinimisation;
-        }
 
         /// @brief Sorts the underlying population in the order best -> worst
         void sort() {
-            if(isMinimisation) {
-                this->sortAscending();
-            } else {
-                this->sortDescending();
-            }
+            sortAscending();
         }
 
         /// @brief Attempt to preallocate enough memory in selected vector for n elements
@@ -63,17 +55,19 @@ class Population {
             return selected;
         }
 
-        void addPopulationMember(Phenotype member) {
+        void addPopulationMember(Phenotype<T> member) {
             population.push_back(member);
         }
 
         void printScoresInline() {
             for(auto m : population) {
-                m.printScoreInline();
+                m.printScore();
+                std::cout << ", ";
             }
         }
 
-        /// @brief Resizes the population vector to have n elements
+        /// @brief Resizes the population vector to have n elements, destroys
+        /// all elements at indices >= n
         /// @param n Length of vector after resizing
         void resizePopulation(int n) {
             population.resize(n);
@@ -85,26 +79,40 @@ class Population {
         /// computationally expensive
         /// @return Number of unique population members
         int countUnique() {
-            std::unordered_set<Phenotype> s;
+            bool hashable;
+            static int checkedHashable = false;
+            if(!checkedHashable) {
+                hashable = is_std_hashable_v<Phenotype<T>>;
+                checkedHashable = true;
+            }
+            if(!hashable) {
+                template <typename T> std::string type_name();
+                if(population.size() != 0) {
+                    std::string typeName = type_name<decltype(population[0])>();
+                    std::cerr << typeName << " does not have an implementation for std::hash, you must implement one to use Population::countUnique(), returning 0\n";
+                    return 0;
+                } else {
+                    return 0;
+                }
+            }
+            std::unordered_set<Phenotype<T>> s;
             for(auto member : population) {
                 s.insert(member);
             }
             return s.size();
         }
     private:
-        std::vector<Phenotype> population;
+        std::vector<Phenotype<T>> population;
         std::vector<int> selected;
-        bool isMinimisation = true;
+        std::unique_ptr<Objective> objective;
 
         /// @brief Sort population in ascending order by fitness value
         void sortAscending() {
-            std::sort(population.begin(), population.end(), std::less<Phenotype>());
+            std::sort(population.begin(), population.end(), std::less<Phenotype<T>>());
         }
 
         void sortDescending() {
-            std::sort(population.begin(), population.end(), std::greater<Phenotype>());
+            std::sort(population.begin(), population.end(), std::greater<Phenotype<T>>());
         }
-        
-
 };
 #endif

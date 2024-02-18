@@ -1,49 +1,48 @@
 #ifndef phenotype_hpp
 #define phenotype_hpp
 #include <memory>
-class TSP_Points;
-class Phenotype {
+class Objective;
+template <typename T> class Phenotype {
     public:
-        Phenotype(std::vector<int> permutation, std::shared_ptr<TSP_Points> pointsPtr);
-        Phenotype();
-        static int objectiveFunctionCount;
-        double getScore() const;
-        std::shared_ptr<TSP_Points> getPointsPtr();
-        std::vector<int> getPermutation() const;
-        int getPermutationSize() const;
-        void setPermutation(std::vector<int> newPermutation);
-        bool operator<(const Phenotype& b) const;
-        bool operator>(const Phenotype& b) const;
-        bool operator==(const Phenotype& b) const;
-        void printScoreInline() const;
-        void printScoreNewLine() const;
-        void printPermutationInline() const;
-    private:
-        int permutationSize;
-        double score;
-        std::vector<int> permutation;
-        std::shared_ptr<TSP_Points> pointsPtr;
-        double evaluateTSP(std::vector<int>& permutation);
-};
-
-template <>
-struct std::hash<Phenotype> {
-    std::size_t operator()(const Phenotype& a) const {
-        std::vector<int> p = a.getPermutation();
-        int zeroIdx = 0;
-        while(p[zeroIdx] != 0) {
-            zeroIdx++;
+        /// @brief Constructor for phenotype object
+        /// @param chromosome std::vector<T> real valued 
+        /// @param objective 
+        Phenotype<T>(std::vector<T> chromosome, std::unique_ptr<Objective> objective) : chromosome(chromosome)  {
+            score = Objective.fitnessFunction(chromosome);
         }
-    std::size_t seed = a.getPermutationSize();
-    int size = a.getPermutationSize();
-    for(int i = 0; i < size; i++, zeroIdx++) {
-        zeroIdx %= size;
-        p[zeroIdx] = ((p[zeroIdx] >> 16) ^ p[zeroIdx]) * 0x45d9f3b;
-        p[zeroIdx] = ((p[zeroIdx] >> 16) ^ p[zeroIdx]) * 0x45d9f3b;
-        p[zeroIdx] = (p[zeroIdx] >> 16) ^ p[zeroIdx];
-        seed ^= p[zeroIdx] + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }
-    return seed;
-    }
+        Phenotype<T>();
+        static int objectiveFunctionCount;
+        /// @brief Getter for the fitness value of phenotype
+        /// @return double: fitness value of phenotype
+        double getScore() const {return score;}
+        /// @brief Getter for the chromosome of phenotype
+        /// @return Const reference to phenotype chromosome
+        const std::vector<T>& getChromosome() const {return chromosome;}
+        /// @brief Getter for the size of phenotype chromosome
+        /// @return int: size of phenotype chromosome
+        int getChromosomeSize() const {return chromosome.size();}
+
+        //Operator overloads
+        virtual bool operator<(const Phenotype<T>& b) const = 0;
+        virtual bool operator>(const Phenotype<T>& b) const = 0;
+        virtual bool operator==(const Phenotype<T>& b) const = 0;
+
+        /// @brief Prints the score of a chromosome, does not print any whitespace
+        void printScore() const {std::cout << score;}
+
+        /// @brief Prints the chromosome separated by commas inline
+        /// @param setWidth set width of spacing between commas, i.e with std::setw(setWidth)
+        void printChromosomeInline(int setWidth = 3) const {
+            for(T c : chromosome) {
+                std::cout << std::setw(setWidth) << c << ",";
+            }
+        }
+    private:
+        double score;
+        std::vector<int> chromosome;
+        void setChromosome(std::vector<T>& newChromosome, Objective& objective) {
+            chromosome = newChromosome;
+            score = objective.evaluate();
+        }
 };
 #endif

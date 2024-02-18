@@ -40,3 +40,5 @@ genetic_algorithm.cpp
 
 readFile.cpp
 readFile.hpp
+
+main.cpp

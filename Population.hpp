@@ -23,7 +23,14 @@ class ObjectiveBase;
 template<typename T> 
 class Population {
     public:
-        Population(std::vector<std::shared_ptr<T>> population) : population(population) {}
+        Population(std::vector<std::shared_ptr<T>> population, std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) : population(population), objective(objective) {}
+
+        Population(std::vector<std::vector<typename T::value_type>>& chromosomes, std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) : objective(objective) {
+            for(auto& chromosome : chromosomes) {
+                std::shared_ptr<T> newMember = std::shared_ptr<T>(new T(chromosome, objective));
+                addPopulationMember(newMember);
+            }
+        } 
 
         /// @brief Gets a const reference to population member
         /// @param n Index of population member to get
@@ -98,7 +105,6 @@ class Population {
         /// computationally expensive
         /// @return Number of unique population members
         int countUnique() {
-
             if constexpr (!is_std_hashable_v<T>) {
                 // If T is not hashable, print an error and return 0 or handle it as needed
                 std::cerr << "Type " << typeName() << " does not have an implementation for std::hash. "
@@ -114,21 +120,6 @@ class Population {
             }
         }
 
-        /// @brief Sets the objective function of the population, ideally this
-        /// should only be called by GeneticAlgorithm::setup()
-        /// @param objective Unique pointer to objective
-        void setObjective(std::unique_ptr<ObjectiveBase<typename T::value_type>> objective) {
-            static bool objectiveSet = false;
-            if(objectiveSet) {
-                std::cerr << "Warning: The objective function has already been set, now that it is changed, results may be affected\n";
-            }
-            objectiveSet = true;
-            this->objective = std::move(objective);
-            if(this->objective) {
-                std::cout << "Objective successfully set\n";
-            }
-        }
-
         /// @brief Get a const reference to objective object
         /// @return const Objective<T>&
         const std::unique_ptr<ObjectiveBase<typename T::value_type>>& getObjective() const {
@@ -138,7 +129,7 @@ class Population {
     private:
         std::vector<std::shared_ptr<T>> population;
         std::vector<int> selected;
-        std::unique_ptr<ObjectiveBase<typename T::value_type>> objective;
+        const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective;
 
         /// @brief Sort population in ascending order by fitness value
         void sortAscending() {

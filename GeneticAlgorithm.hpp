@@ -11,8 +11,10 @@ template<typename T>
 class GeneticAlgorithm {
     public:
         ~GeneticAlgorithm() {}
-        GeneticAlgorithm(std::unique_ptr<Population<T>> population, std::unique_ptr<ObjectiveBase<typename T::value_type>> objective) 
-        : population(std::move(population)), objective(std::move(objective)) {}
+        GeneticAlgorithm(std::vector<std::vector<typename T::value_type>>& chromosomes, std::unique_ptr<ObjectiveBase<typename T::value_type>> objective) 
+        : objective(std::move(objective)) {
+            this->population = std::unique_ptr<Population<T>>(new Population<T>(chromosomes, this->objective));
+        }
 
         virtual void run() final {
             setup();
@@ -24,7 +26,7 @@ class GeneticAlgorithm {
         std::unique_ptr<ObjectiveBase<typename T::value_type>> objective;
     private:
         void setup() {
-            population->setObjective(std::move(objective));
+            
         }
 };
 #endif

@@ -12,6 +12,9 @@ class ObjectiveBase {
         virtual double evaluate(PhenotypeBase<T>& phenotype) final {
             incrementFitnessFunctionCallCount();
             return fitnessFunction(phenotype);
+        }
+        int getCallCount() const {
+            return fitnessFunctionCallCount;
         } 
     protected:
         void incrementFitnessFunctionCallCount() {

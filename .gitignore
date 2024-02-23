@@ -30,3 +30,17 @@
 *.exe
 *.out
 *.app
+
+#Vscode stuff
+.vscode/*
+
+courseworkStuff/*
+
+genetic_algorithm.cpp
+
+readFile.cpp
+readFile.hpp
+
+main.cpp
+
+mre/*

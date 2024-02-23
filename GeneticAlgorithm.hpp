@@ -20,11 +20,16 @@ class GeneticAlgorithm {
 
         virtual void run() final {
             setup();
+            T best = (*population).getPopulationMember(0);
             while(!terminationManager.checkTermination()) {
                 geneticAlgorithm();
+                population->sort();
+                if(population->getPopulationMember(0) < best) {
+                    best = population->getPopulationMember(0);
+                }
             }
-            std::cout << "Best solution score: " << (*population).getPopulationMember(0).getScore() << "\n";
-            (*population).getPopulationMember(0).printChromosomeInline();
+            std::cout << "Best solution score: " << best.getScore() << "\n";
+            population->getPopulationMember(0).printChromosomeInline();
         }
 
         void addTerminationFlag(std::unique_ptr<TerminationFlagBase<T>> terminationFlag) {
@@ -48,6 +53,7 @@ class GeneticAlgorithm {
                 std::cerr << "At least one termination condition must be provided\nExiting program\n";
                 exit(-1);
             }
+            terminationManager.checkHasHardstopFlag();
             terminationManager.initialiseTerminationFlags(population, objective);
 
         }

@@ -1,19 +1,23 @@
 #ifndef Objective_hpp
 #define Objective_hpp
-class Phenotype;
-class Objective {
-    private:
-        int fitnessFunctionCallCount;
-    protected:
-        virtual double fitnessFunction(Phenotype& phenotype) = 0;
+
+template<typename T>
+class PhenotypeBase;
+
+template<typename T>
+class ObjectiveBase {
     public:
-        virtual ~Objective() {}
+        /// @brief Virtual destructor of abstract base ObjectiveBase class
+        virtual ~ObjectiveBase() {}
+        virtual double evaluate(PhenotypeBase<T>& phenotype) final {
+            incrementFitnessFunctionCallCount();
+            return fitnessFunction(phenotype);
+        } 
+    protected:
         void incrementFitnessFunctionCallCount() {
             fitnessFunctionCallCount++;
         }
-        virtual double evaluate(Phenotype& phenotype) final {
-            incrementFitnessFunctionCallCount();
-            return fitnessFunction(phenotype);
-        }
+        virtual double fitnessFunction(PhenotypeBase<T>& phenotype) = 0;
+        int fitnessFunctionCallCount = 0;
 };
 #endif

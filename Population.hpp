@@ -6,26 +6,44 @@
 #include <unordered_set>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include "CheckHashable.hpp"
-class Phenotype;
-class Objective;
-template<typename T> class Population {
+
+#if defined(__GNUC__) || defined(__clang__)
+    #include <cxxabi.h>
+    #define HAS_CXXABI
+#endif
+
+template<typename T>
+class PhenotypeBase;
+
+template<typename T>
+class ObjectiveBase;
+
+template<typename T> 
+class Population {
     public:
-        Population(std::vector<Phenotype<T>> population, std::unique_ptr<Objective> objective) : population(population), objective(objective) {}
-        void setPopulation(std::vector<Phenotype<T>> population) {
-            this->population = population;
-        }
+        Population(std::vector<std::shared_ptr<T>> population) : population(population) {}
 
         /// @brief Gets a const reference to population member
         /// @param n Index of population member to get
-        /// @return A reference to a population member (Phenotype<T>&)
-        const Phenotype<T>& operator[](int n) const {
-            return population[n];
+        /// @return A const reference to a population member (const T&)
+        const T& operator[](int n) const {
+            return *population[n];
+        }
+
+        /// @brief Gets a non-const reference to population member, better to
+        /// use Population::operator[] in general unless absolutely necessary to
+        /// modify population member
+        /// @param n Index of population member to get
+        /// @return A reference to a population member (T&)
+        T& getPopulationMember(int n) {
+            return *population[n];
         }
 
         /// @brief Returns the size of the population
         /// @return 
-        int size() const {return this->population.size();}
+        int size() const {return population.size();}
 
         /// @brief Sorts the underlying population in the order best -> worst
         void sort() {
@@ -51,19 +69,20 @@ template<typename T> class Population {
 
         /// @brief Get copy of selected vector
         /// @return vector<int> of selected population members
-        std::vector<int> getSelected() {
+        std::vector<int> getSelectedIndices() {
             return selected;
         }
 
-        void addPopulationMember(Phenotype<T> member) {
+        void addPopulationMember(std::shared_ptr<T>& member) {
             population.push_back(member);
         }
 
         void printScoresInline() {
-            for(auto m : population) {
-                m.printScore();
+            for(auto& m : population) {
+                m->printScore();
                 std::cout << ", ";
             }
+            std::cout << "\n";
         }
 
         /// @brief Resizes the population vector to have n elements, destroys
@@ -79,40 +98,84 @@ template<typename T> class Population {
         /// computationally expensive
         /// @return Number of unique population members
         int countUnique() {
-            bool hashable;
-            static int checkedHashable = false;
-            if(!checkedHashable) {
-                hashable = is_std_hashable_v<Phenotype<T>>;
-                checkedHashable = true;
-            }
-            if(!hashable) {
-                template <typename T> std::string type_name();
-                if(population.size() != 0) {
-                    std::string typeName = type_name<decltype(population[0])>();
-                    std::cerr << typeName << " does not have an implementation for std::hash, you must implement one to use Population::countUnique(), returning 0\n";
-                    return 0;
-                } else {
-                    return 0;
+
+            if constexpr (!is_std_hashable_v<T>) {
+                // If T is not hashable, print an error and return 0 or handle it as needed
+                std::cerr << "Type " << typeName() << " does not have an implementation for std::hash. "
+                        << "You must implement one to use Population::countUnique().\n";
+                return 0;
+            } else {
+                // If T is hashable, proceed to count unique individuals
+                std::unordered_set<T> uniqueSet;
+                for (const auto& individual : population) {
+                    uniqueSet.insert(*individual);
                 }
+                return uniqueSet.size();
             }
-            std::unordered_set<Phenotype<T>> s;
-            for(auto member : population) {
-                s.insert(member);
-            }
-            return s.size();
         }
+
+        /// @brief Sets the objective function of the population, ideally this
+        /// should only be called by GeneticAlgorithm::setup()
+        /// @param objective Unique pointer to objective
+        void setObjective(std::unique_ptr<ObjectiveBase<typename T::value_type>> objective) {
+            static bool objectiveSet = false;
+            if(objectiveSet) {
+                std::cerr << "Warning: The objective function has already been set, now that it is changed, results may be affected\n";
+            }
+            objectiveSet = true;
+            this->objective = std::move(objective);
+            if(this->objective) {
+                std::cout << "Objective successfully set\n";
+            }
+        }
+
+        /// @brief Get a const reference to objective object
+        /// @return const Objective<T>&
+        const std::unique_ptr<ObjectiveBase<typename T::value_type>>& getObjective() const {
+            return objective;
+        }
+
     private:
-        std::vector<Phenotype<T>> population;
+        std::vector<std::shared_ptr<T>> population;
         std::vector<int> selected;
-        std::unique_ptr<Objective> objective;
+        std::unique_ptr<ObjectiveBase<typename T::value_type>> objective;
 
         /// @brief Sort population in ascending order by fitness value
         void sortAscending() {
-            std::sort(population.begin(), population.end(), std::less<Phenotype<T>>());
+            std::sort(population.begin(), population.end(), [](const std::shared_ptr<T>& a, const std::shared_ptr<T>& b) {
+                return *a < *b;
+            });
         }
 
         void sortDescending() {
-            std::sort(population.begin(), population.end(), std::greater<Phenotype<T>>());
+            std::sort(population.begin(), population.end(), [](const std::shared_ptr<T>& a, const std::shared_ptr<T>& b) {
+                return *a > *b;
+            });
         }
+
+        /// @brief Get typename of type
+        /// @return std::string typename
+        std::string typeName() {
+            return demangle(typeid(T).name());
+        }
+
+        /// @brief Demangle typename on GCC / G++ / Clang otherwise return
+        /// mangled name
+        /// @param mangledName char array of typename to demangle
+        /// @return demangled (cxxabi available) name or mangled name if not
+        std::string demangle(const char* mangledName) {
+            #ifdef HAS_CXXABI
+            int status = -1;
+            std::unique_ptr<char, void(*)(void*)> res {
+                abi::__cxa_demangle(mangledName, NULL, NULL, &status),
+                std::free
+            };
+            return (status == 0) ? res.get() : mangledName;
+            #else
+            // If the compiler does not support abi::__cxa_demangle, just return the mangled name
+            return mangledName;
+            #endif
+        }
+
 };
 #endif

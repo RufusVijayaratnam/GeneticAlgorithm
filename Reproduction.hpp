@@ -10,7 +10,7 @@ namespace Reproduction {
     template<typename T>
     void nElitism(Population<T>& population, int n) {
         population.sort();
-        population.resizePopulation();
+        population.resizePopulation(std::min(population.size(), n));
     }
 }
 #endif

@@ -1,13 +1,18 @@
 #ifndef Mutation_hpp
 #define Mutation_hpp
+
 template<typename T>
 class Population;
 
+template<typename T>
+class ObjectiveBase;
+
 namespace Variation {
     template<typename T>
-    void Variation::rotationToRight(Population<T>& population) {
-        if(!mutationRateSet) {
-            std::cerr << "rotationToRight\nMutation rate must be set to use this function\n";
+    void rotationToRight(Population<T>& population, double mutationRate=0.3) {
+        if(mutationRate == 0) return;
+        if(mutationRate < 0 || mutationRate > 1) {
+            std::cerr << "rotationToRight\nMutation rate must be between [0,1], not " << mutationRate << "\n";
             exit(-1);
         }
         static bool seeded = false;
@@ -16,8 +21,8 @@ namespace Variation {
             srand(ct);
             seeded = true;
         }
-        int permutationSize = population[0].getPermutationSize();
-        for(int p = 0; p < population.size() && !shouldTerminateGA; p++) {
+        int permutationSize = population[0].getChromosomeSize();
+        for(int p = 0; p < population.size(); p++) {
             double mutationProbability = double(rand()) / double(RAND_MAX);
             if(mutationProbability > mutationRate) continue;
             int i, j, k;
@@ -26,13 +31,13 @@ namespace Variation {
             k = rand() % (permutationSize + 1);
             if(i == j) continue;
             
-            std::vector<int> permutation = population.getPopulationMember(p).getPermutation();
-            std::vector<int> newPermutation = std::vector<int>(permutationSize, -1);
-            std::vector<int> partial;
+            std::vector<typename T::value_type> permutation = population[p].getChromosome();
+            std::vector<typename T::value_type> newPermutation = std::vector<typename T::value_type>(permutationSize, -1);
+            std::vector<typename T::value_type> partial;
             if(i <= j) {
                 int partialSize = abs(j - i) + 1;
                 if(k == partialSize) continue;
-                partial = std::vector<int>(partialSize, -1);
+                partial = std::vector<typename T::value_type>(partialSize, -1);
                 //Normal rotation
                 for(int n = 0; n < i; n++) {
                     newPermutation[n] = permutation[n];
@@ -64,7 +69,8 @@ namespace Variation {
                     newPermutation[n % permutationSize] = partial[n - i];
                 }
             }
-            population.getPopulationMember(p).setPermutation(newPermutation);
+            const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective = population.getObjective();
+            population.getPopulationMember(p).setChromosome(newPermutation, objective);
         }
     }
 }

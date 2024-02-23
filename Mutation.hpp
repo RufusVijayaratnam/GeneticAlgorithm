@@ -9,7 +9,7 @@ class ObjectiveBase;
 
 namespace Variation {
     template<typename T>
-    void rotationToRight(Population<T>& population, double mutationRate=0.3) {
+    void rotationToRight(Population<T>& population, TerminationManager<T>& terminationManager, double mutationRate=0.3) {
         if(mutationRate == 0) return;
         if(mutationRate < 0 || mutationRate > 1) {
             std::cerr << "rotationToRight\nMutation rate must be between [0,1], not " << mutationRate << "\n";
@@ -23,6 +23,7 @@ namespace Variation {
         }
         int permutationSize = population[0].getChromosomeSize();
         for(int p = 0; p < population.size(); p++) {
+            if(terminationManager.checkTermination()) return;
             double mutationProbability = double(rand()) / double(RAND_MAX);
             if(mutationProbability > mutationRate) continue;
             int i, j, k;

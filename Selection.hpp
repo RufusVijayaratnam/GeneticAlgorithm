@@ -8,9 +8,13 @@ class Phenotype;
 template<typename T>
 class Population;
 
+template<typename T>
+class TerminationFlagManager;
+
 namespace Selection {
     template<typename T>
-    void linearRankingSelection(Population<T>& population, int numToSelect, bool verbose=false) {
+    void linearRankingSelection(Population<T>& population, int numToSelect, TerminationManager<T>& terminationManager, bool verbose=false) {
+        if(terminationManager.checkTermination()) return;
         if(verbose) std::cout << "linearRankingSelection\n";
         population.clearSelected();
         int M = population.size();
@@ -51,7 +55,8 @@ namespace Selection {
     }
 
     template<typename T>
-    void truncateSelection(Population<T>& population, int numToSelect) {
+    void truncateSelection(Population<T>& population, int numToSelect, TerminationManager<T>& terminationManager) {
+        if(terminationManager.checkTermination()) return;
         population.clearSelected();
         if(population.size() < numToSelect) {
             std::cerr << "truncateSelection:\ncannot select more individuals than total population size\n";

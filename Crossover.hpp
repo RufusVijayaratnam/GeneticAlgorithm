@@ -12,7 +12,7 @@ class Population;
 
 namespace Variation {
     template<typename T>
-    void simpleCrossover(Population<T>& population, double crossoverRate=0.8, bool verbose=false) {
+    void simpleCrossover(Population<T>& population, TerminationManager<T>& terminationManager, double crossoverRate=0.8, bool verbose=false) {
         static bool seeded = false;
         std::default_random_engine randomEngine;
         if(!seeded) {
@@ -29,6 +29,7 @@ namespace Variation {
         //Shuffle to get random pairs
         shuffle(selected.begin(), selected.end(), randomEngine);
         for(int i = 0; i < m; i += 2) {
+            if(terminationManager.checkTermination()) return;
             double r = double(rand()) / RAND_MAX;
             if(r > crossoverRate) continue;
             std::vector<typename T::value_type> child1Permutation = std::vector<typename T::value_type>(chromosomeSize);
@@ -62,7 +63,7 @@ namespace Variation {
     }
     
     template<typename T>
-    void orderedCrossover(Population<T>& population, double crossoverRate=0.8, bool verbose=false) {
+    void orderedCrossover(Population<T>& population, TerminationManager<T>& terminationManager, double crossoverRate=0.8, bool verbose=false) {
         std::vector<int> selected = population.getSelectedIndices();
         int numSelected = selected.size();
         if(numSelected < 2) {
@@ -79,6 +80,7 @@ namespace Variation {
         }
 
         for(int p = 0; p < numSelected - 1; p += 2) {
+            if(terminationManager.checkTermination()) return;
             double r = double(rand()) / RAND_MAX;
             if(r > crossoverRate) continue;
             //Generate random number between 1 and n - 2 inclusive

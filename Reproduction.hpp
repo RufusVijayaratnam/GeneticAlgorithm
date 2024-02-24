@@ -1,5 +1,5 @@
-#ifndef Reproduction_hpp
-#define Reproduction_hpp
+#ifndef REPRODUCTION_HPP
+#define REPRODUCTION_HPP
 template<typename T>
 class Population;
 

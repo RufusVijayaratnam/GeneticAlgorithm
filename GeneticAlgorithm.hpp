@@ -1,13 +1,16 @@
-#ifndef GeneticAlgorithm_hpp
-#define GeneticAlgorithm_hpp
+#ifndef GENETICALGORITHM_HPP
+#define GENETICALGORITHM_HPP
 #include <memory>
 #include <ostream>
-#include "TerminationCondition.hpp"
+
 template<typename T>
 class ObjectiveBase;
 
 template<typename T>
 class Population;
+
+template<typename T>
+class TerminationManager;
 
 template<typename T>
 class GeneticAlgorithm {

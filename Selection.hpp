@@ -1,5 +1,5 @@
-#ifndef selection_functions_hpp
-#define selection_functions_hpp
+#ifndef SELECTION_HPP
+#define SELECTION_HPP
 #include <random>
 #include <algorithm>
 template<typename T>

@@ -1,5 +1,5 @@
-#ifndef Population_hpp
-#define Population_hpp
+#ifndef POPULATION_HPP
+#define POPULATION_HPP
 #include <vector>
 #include <algorithm>
 #include <ostream>

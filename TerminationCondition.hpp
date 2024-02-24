@@ -1,5 +1,5 @@
-#ifndef TerminationCondition_hpp
-#define TerminationCondition_hpp
+#ifndef TERMINATIONCONDITION_HPP
+#define TERMINATIONCONDITION_HPP
 #include <chrono>
 #include <memory>
 

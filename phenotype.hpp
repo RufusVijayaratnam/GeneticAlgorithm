@@ -1,5 +1,5 @@
-#ifndef phenotype_hpp
-#define phenotype_hpp
+#ifndef PHENOTYPE_HPP
+#define PHENOTYPE_HPP
 #include <memory>
 #include <iostream>
 #include <iomanip>

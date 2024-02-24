@@ -1,5 +1,5 @@
-#ifndef crossover_functions_hpp
-#define crossover_functions_hpp
+#ifndef CROSSOVER_HPP
+#define CROSSOVER_HPP
 
 template<typename T>
 class PhenotypeBase;

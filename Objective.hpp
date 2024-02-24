@@ -1,5 +1,5 @@
-#ifndef Objective_hpp
-#define Objective_hpp
+#ifndef OBJECTIVE_HPP
+#define OBJECTIVE_HPP
 
 template<typename T>
 class PhenotypeBase;

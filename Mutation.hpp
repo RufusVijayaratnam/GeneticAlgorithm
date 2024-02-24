@@ -1,5 +1,5 @@
-#ifndef Mutation_hpp
-#define Mutation_hpp
+#ifndef MUTATION_HPP
+#define MUTATION_HPP
 
 template<typename T>
 class Population;

@@ -15,7 +15,9 @@ class TerminationFlagBase {
         virtual bool checkTermination() = 0;
         virtual void setPopulation(const std::unique_ptr<Population<T>>& population) {return;}
         virtual void setObjective(const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) {return;}
-        virtual bool isHardstopFlag() {return false;}
+        virtual bool isHardstopFlag() const {return false;}
+        virtual double checkProgress() const {return -1;}
+        virtual void reportProgress() const {return;}
 };
 
 template<typename T>
@@ -40,7 +42,17 @@ class TimeTerminationFlag : public TerminationFlagBase<T> {
             return false;
         }
 
-        virtual bool isHardstopFlag() override {return true;}
+        virtual bool isHardstopFlag() const override {return true;}
+
+        virtual double checkProgress() const override {
+            auto now = std::chrono::steady_clock::now();
+            return static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count()) / static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count());
+        }
+
+        virtual void reportProgress() const override {
+            auto now = std::chrono::steady_clock::now();
+            std::cout << "Time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count()) / 1000 << " : " << std::chrono::duration_cast<std::chrono::seconds>(timeLimit).count() << " s\n";
+        }
 };
 
 template<typename T>
@@ -61,7 +73,11 @@ class IterationTerminationFlag : public TerminationFlagBase<T> {
             return false;
         }
 
-        virtual bool isHardstopFlag() override {return true;}
+        virtual bool isHardstopFlag() const override {return true;}
+
+        virtual double checkProgress() const override {return static_cast<double>(iterationCount) / static_cast<double>(iterationLimit);}
+
+        virtual void reportProgress() const override {std::cout << "iteration: " << iterationCount << " : " << iterationLimit << "\n";}
 };
 
 template<typename T>
@@ -89,7 +105,11 @@ class FitnessFunctionCallTerminationFlag : public TerminationFlagBase<T> {
 
         virtual void setObjective(const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) override {this->objective = objective.get();}
 
-        virtual bool isHardstopFlag() override {return true;}
+        virtual bool isHardstopFlag() const override {return true;}
+
+        virtual double checkProgress() const override {return double(objective->getCallCount()) / callCountLimit;}
+
+        virtual void reportProgress() const override {std::cout << "fitness function calls: " << objective->getCallCount() << " : " << callCountLimit << "\n";}
 };
 
 template<typename T>
@@ -174,6 +194,7 @@ class TerminationManager {
     private:
         std::vector<std::unique_ptr<TerminationFlagBase<T>>> terminationFlags;
         bool terminated = false;
+        int numberOfReports;
     public:
         TerminationManager() {}
         void addTerminationFlag(std::unique_ptr<TerminationFlagBase<T>> terminationFlag) {
@@ -219,7 +240,34 @@ class TerminationManager {
         int size() const {
             return terminationFlags.size();
         }
+
+        bool reportProgress() {
+            if(numberOfReports == -1) return false;
+            double maxProgress = 0.0;
+            TerminationFlagBase<T>* maxFlag = nullptr;
+            for (const auto& flag : terminationFlags) {
+                if(!flag->isHardstopFlag()) continue;
+                double progress = flag->checkProgress();
+                if (progress > maxProgress) {
+                    maxProgress = progress;
+                    maxFlag = flag.get();
+                }
+            }
+
+            static int lastReportIndex = -1;
+            int currentReportIndex = static_cast<int>(maxProgress * numberOfReports);
+            bool isReporting = false;
+            if (currentReportIndex > lastReportIndex) {
+                std::cout << "Progress: " << maxProgress * 100 << "%\n";
+                maxFlag->reportProgress();
+                lastReportIndex = currentReportIndex;
+                isReporting = true;
+            }
+            return isReporting;
+        }
+
+        void setProgressReportCount(int numberOfReports) {
+            this->numberOfReports = numberOfReports;
+        }
 };
-
-
 #endif

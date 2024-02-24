@@ -27,6 +27,9 @@ class GeneticAlgorithm {
                 if(population->getPopulationMember(0) < best) {
                     best = population->getPopulationMember(0);
                 }
+                if(terminationManager.reportProgress()) {
+                    std::cout << "Current best score: " << best.getScore() << "\n";
+                }
             }
             std::cout << "Best solution score: " << best.getScore() << "\n";
             population->getPopulationMember(0).printChromosomeInline();
@@ -42,20 +45,23 @@ class GeneticAlgorithm {
             return std::move(population);
         }
 
+        void setProgressReportCount(int reportCount=-1) {this->reportCount = reportCount;}
+
     protected:
         virtual void geneticAlgorithm() = 0;
         std::unique_ptr<Population<T>> population;
         std::unique_ptr<ObjectiveBase<typename T::value_type>> objective;
         TerminationManager<T> terminationManager = TerminationManager<T>();
+        int reportCount;
     private:
         void setup() {
+            terminationManager.setProgressReportCount(reportCount);
             if(terminationManager.size() < 1) {
                 std::cerr << "At least one termination condition must be provided\nExiting program\n";
                 exit(-1);
             }
             terminationManager.checkHasHardstopFlag();
             terminationManager.initialiseTerminationFlags(population, objective);
-
         }
 };
 #endif

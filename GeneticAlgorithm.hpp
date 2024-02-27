@@ -1,7 +1,8 @@
 #ifndef GENETICALGORITHM_HPP
 #define GENETICALGORITHM_HPP
+#include <iostream>
+#include <vector>
 #include <memory>
-#include <ostream>
 
 template<typename T>
 class ObjectiveBase;
@@ -11,6 +12,9 @@ class Population;
 
 template<typename T>
 class TerminationManager;
+
+template<typename T>
+class TerminationFlagBase;
 
 template<typename T>
 class GeneticAlgorithm {

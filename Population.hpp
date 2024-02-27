@@ -2,10 +2,10 @@
 #define POPULATION_HPP
 #include <vector>
 #include <algorithm>
-#include <ostream>
+#include <iostream>
 #include <unordered_set>
-#include <memory>
 #include <string>
+#include <memory>
 #include <type_traits>
 #include "CheckHashable.hpp"
 

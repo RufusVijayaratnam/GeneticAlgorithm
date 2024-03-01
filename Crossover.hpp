@@ -10,6 +10,9 @@ class ObjectiveBase;
 template<typename T>
 class Population;
 
+template<typename T>
+class TerminationManager;
+
 namespace Variation {
     template<typename T>
     void simpleCrossover(Population<T>& population, TerminationManager<T>& terminationManager, double crossoverRate=0.8, bool verbose=false) {
@@ -23,6 +26,8 @@ namespace Variation {
         }
         int chromosomeSize = population[0].getChromosomeSize();
         std::vector<int> selected = population.getSelectedIndices();
+        //Clear selected to use in mutation
+        population.clearSelected();
         int m = selected.size();
 
 
@@ -57,7 +62,9 @@ namespace Variation {
 
             //Append new phenotypes to solutions
             population.addPopulationMember(child1);
+            population.select(population.size() - 1);
             population.addPopulationMember(child2);
+            population.select(population.size() - 1);
         }
 
     }
@@ -65,6 +72,7 @@ namespace Variation {
     template<typename T>
     void orderedCrossover(Population<T>& population, TerminationManager<T>& terminationManager, double crossoverRate=0.8, bool verbose=false) {
         std::vector<int> selected = population.getSelectedIndices();
+        population.clearSelected();
         int numSelected = selected.size();
         if(numSelected < 2) {
             std::cerr << "Variation::orderedCrossover\nCan't have n < 2 for ordered crossover\n";
@@ -120,7 +128,9 @@ namespace Variation {
             std::shared_ptr<T> child1Pheno = std::shared_ptr<T>(new T(child1, objective));
             std::shared_ptr<T> child2Pheno = std::shared_ptr<T>(new T(child2, objective));
             population.addPopulationMember(child1Pheno);
+            population.select(population.size() - 1);
             population.addPopulationMember(child2Pheno);
+            population.select(population.size() - 1);
 
             if(verbose) {
                 std::cout << "a = " << a << ", b = " << b << "\n";

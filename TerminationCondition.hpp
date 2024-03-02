@@ -12,6 +12,7 @@ class Population;
 template<typename T>
 class TerminationFlagBase {
     public:
+        bool alreadyPrinted = false;
         virtual ~TerminationFlagBase() = default;
         virtual bool checkTermination() = 0;
         virtual void setPopulation(const std::unique_ptr<Population<T>>& population) {return;}
@@ -35,9 +36,9 @@ class TimeTerminationFlag : public TerminationFlagBase<T> {
         virtual bool checkTermination() override {
             auto now = std::chrono::steady_clock::now();
             if(std::chrono::duration_cast<std::chrono::seconds>(now - startTime) >= timeLimit) {
-                static bool alreadyPrinted = false;
-                if(!alreadyPrinted) std::cout << "TimeTerminationFlag terminating: time = " << std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() << " seconds\n";
-                alreadyPrinted = true;
+
+                if(!this->alreadyPrinted) std::cout << "TimeTerminationFlag terminating: time = " << std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() << " seconds\n";
+                this->alreadyPrinted = true;
                 return true;
             }
             return false;
@@ -66,9 +67,9 @@ class IterationTerminationFlag : public TerminationFlagBase<T> {
         virtual bool checkTermination() override {
             iterationCount++;
             if(iterationCount >= iterationLimit) {
-                static bool alreadyPrinted = false;
-                if(!alreadyPrinted) std::cout << "IterationTerminationFlag terminating: iteration = " << iterationCount << "\n";
-                alreadyPrinted = true;
+
+                if(!this->alreadyPrinted) std::cout << "IterationTerminationFlag terminating: iteration = " << iterationCount << "\n";
+                this->alreadyPrinted = true;
                 return true;
             }
             return false;
@@ -96,9 +97,9 @@ class FitnessFunctionCallTerminationFlag : public TerminationFlagBase<T> {
                 exit(-1);
             }
             if(objective->getCallCount() >= callCountLimit) {
-                static bool alreadyPrinted = false;
-                if(!alreadyPrinted) std::cout << "FitnessFunctionCallTerminationFlag terminating: objective function call count = " << objective->getCallCount() << "\n";
-                alreadyPrinted = true;
+
+                if(!this->alreadyPrinted) std::cout << "FitnessFunctionCallTerminationFlag terminating: objective function call count = " << objective->getCallCount() << "\n";
+                this->alreadyPrinted = true;
                 return true;
             }
             return false;
@@ -128,9 +129,8 @@ class MinimumPopulationTerminationFlag : public TerminationFlagBase<T> {
                 exit(-1);
         }
         if(population->size() < minimumPopulation) {
-            static bool alreadyPrinted = false;
-            if(!alreadyPrinted) std::cout << "MinimumPopulationTerminationFlag terminating: population size = " << population->size() << "\n";
-            alreadyPrinted = true;
+            if(!this->alreadyPrinted) std::cout << "MinimumPopulationTerminationFlag terminating: population size = " << population->size() << "\n";
+            this->alreadyPrinted = true;
         }
         return false;
     }
@@ -153,9 +153,8 @@ class MaximumPopulationTerminationFlag : public TerminationFlagBase<T> {
                 exit(-1);
         }
         if(population->size() > minimumPopulation) {
-            static bool alreadyPrinted = false;
-            if(!alreadyPrinted) std::cout << "MaximumPopulationTerminationFlag terminating: population size = " << population->size() << "\n";
-            alreadyPrinted = true;
+            if(!this->alreadyPrinted) std::cout << "MaximumPopulationTerminationFlag terminating: population size = " << population->size() << "\n";
+            this->alreadyPrinted = true;
         }
         return false;
     }
@@ -179,9 +178,9 @@ class MinimumUniquePopulationTerminationFlag : public TerminationFlagBase<T> {
             }
             int uniqueCount = population->countUnique();
             if(uniqueCount < minimumUnique) {
-                static bool alreadyPrinted = false;
-                if(!alreadyPrinted) std::cout << "MinimumUniquePopulationTerminationFlag terminating: unique population count = " << uniqueCount << "\n";
-                alreadyPrinted = true;
+
+                if(!this->alreadyPrinted) std::cout << "MinimumUniquePopulationTerminationFlag terminating: unique population count = " << uniqueCount << "\n";
+                this->alreadyPrinted = true;
             }
             return false;
         }
@@ -195,6 +194,7 @@ class TerminationManager {
     private:
         std::vector<std::unique_ptr<TerminationFlagBase<T>>> terminationFlags;
         bool terminated = false;
+        int lastReportIndex = -1;
         int numberOfReports;
     public:
         TerminationManager() {}
@@ -255,7 +255,6 @@ class TerminationManager {
                 }
             }
 
-            static int lastReportIndex = -1;
             int currentReportIndex = static_cast<int>(maxProgress * numberOfReports);
             bool isReporting = false;
             if (currentReportIndex > lastReportIndex) {

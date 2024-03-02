@@ -12,6 +12,7 @@ class Population;
 template<typename T>
 class TerminationFlagBase {
     public:
+        virtual ~TerminationFlagBase() = default;
         virtual bool checkTermination() = 0;
         virtual void setPopulation(const std::unique_ptr<Population<T>>& population) {return;}
         virtual void setObjective(const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) {return;}

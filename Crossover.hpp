@@ -75,7 +75,8 @@ namespace Variation {
         population.clearSelected();
         int numSelected = selected.size();
         if(numSelected < 2) {
-            std::cerr << "Variation::orderedCrossover\nCan't have n < 2 for ordered crossover\n";
+            std::cerr << "Variation::orderedCrossover\nCan't have n < 2 for ordered crossover\nExiting Program\n";
+            exit(-1);
         }
 
         int chromosomeSize = population[0].getChromosomeSize();

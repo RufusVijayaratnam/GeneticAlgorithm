@@ -59,7 +59,7 @@ class GeneticAlgorithm {
         std::unique_ptr<Population<T>> population;
         std::unique_ptr<ObjectiveBase<typename T::value_type>> objective;
         TerminationManager<T> terminationManager = TerminationManager<T>();
-        int reportCount;
+        int reportCount = -1;
     private:
         void setup() {
             terminationManager.setProgressReportCount(reportCount);

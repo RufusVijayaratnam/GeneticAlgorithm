@@ -73,6 +73,7 @@ namespace Variation {
     void orderedCrossover(Population<T>& population, TerminationManager<T>& terminationManager, double crossoverRate=0.8, bool verbose=false) {
         std::vector<int> selected = population.getSelectedIndices();
         population.clearSelected();
+        if(crossoverRate < 0.000001) return;
         int numSelected = selected.size();
         if(numSelected < 2) {
             std::cerr << "Variation::orderedCrossover\nCan't have n < 2 for ordered crossover\nExiting Program\n";
@@ -81,20 +82,18 @@ namespace Variation {
 
         int chromosomeSize = population[0].getChromosomeSize();
         
-        static bool seeded = false;
-        if(!seeded) {
-            time_t ct = time(NULL);
-            srand(ct);
-            seeded = true;
-        }
+        static std::random_device rd;
+        static std::mt19937 mt(rd());
+        static std::uniform_int_distribution<int> intDist(0, chromosomeSize - 1);
+        static std::uniform_real_distribution<double> realDist(0.0, 1.0);
 
         for(int p = 0; p < numSelected - 1; p += 2) {
             if(terminationManager.checkTermination()) return;
-            double r = double(rand()) / RAND_MAX;
-            if(r > crossoverRate) continue;
+            double crossoverProbability = realDist(mt);
+            if(crossoverRate < crossoverProbability) continue;
             //Generate random number between 1 and n - 2 inclusive
-            int a = rand() % chromosomeSize;
-            int b = rand() % (chromosomeSize - a) + a;
+            int a = intDist(mt);
+            int b = intDist(mt) % (chromosomeSize - a) + a;
             int j1, j2, k;
             j1 = b + 1; j2 = b + 1; k = b + 1;
             int p1Idx = selected[p];

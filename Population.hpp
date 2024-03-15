@@ -14,28 +14,26 @@
     #define HAS_CXXABI
 #endif
 
-template<typename T>
 class PhenotypeBase;
-
-template<typename T>
 class ObjectiveBase;
+class RepresentationBase;
 
-template<typename T> 
 class Population {
     public:
-        Population(std::vector<std::shared_ptr<T>> population, std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) : population(population), objective(objective) {}
+        Population(std::vector<std::shared_ptr<PhenotypeBase>> population, std::unique_ptr<ObjectiveBase>& objective) : population(population), objective(objective) {}
 
-        Population(std::vector<std::vector<typename T::value_type>>& chromosomes, std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) : objective(objective) {
-            for(auto& chromosome : chromosomes) {
-                std::shared_ptr<T> newMember = std::shared_ptr<T>(new T(chromosome, objective));
+        Population(std::shared_ptr<PhenotypeBase> emptyPhenotype, std::vector<std::unique_ptr<RepresentationBase>> representations, std::unique_ptr<ObjectiveBase>& objective) : objective(objective) {
+            for(auto& representation : representations) {
+                std::shared_ptr<PhenotypeBase> newMember = emptyPhenotype->emptyCopy();
+                newMember->setRepresentation(std::move(representation), objective);
                 addPopulationMember(newMember);
             }
         } 
 
         /// @brief Gets a const reference to population member
         /// @param n Index of population member to get
-        /// @return A const reference to a population member (const T&)
-        const T& operator[](int n) const {
+        /// @return A const reference to a population member (const PhenotypeBase&)
+        const PhenotypeBase& operator[](int n) const {
             return *population[n];
         }
 
@@ -43,8 +41,8 @@ class Population {
         /// use Population::operator[] in general unless absolutely necessary to
         /// modify population member
         /// @param n Index of population member to get
-        /// @return A reference to a population member (T&)
-        T& getPopulationMember(int n) {
+        /// @return A reference to a population member (PhenotypeBase&)
+        PhenotypeBase& getPopulationMember(int n) {
             return *population[n];
         }
 
@@ -80,7 +78,7 @@ class Population {
             return selected;
         }
 
-        void addPopulationMember(std::shared_ptr<T>& member) {
+        void addPopulationMember(std::shared_ptr<PhenotypeBase>& member) {
             population.push_back(member);
         }
 
@@ -105,16 +103,16 @@ class Population {
         /// computationally expensive
         /// @return Number of unique population members
         int countUnique() {
-            if constexpr (!is_std_hashable_v<T>) {
+            if constexpr (!is_std_hashable_v<PhenotypeBase>) {
                 // If T is not hashable, print an error and return 0 or handle it as needed
                 std::cerr << "Type " << typeName() << " does not have an implementation for std::hash. "
                         << "You must implement one to use Population::countUnique().\n";
                 return 0;
             } else {
                 // If T is hashable, proceed to count unique individuals
-                std::unordered_set<T> uniqueSet;
+                std::unordered_set<PhenotypeBase*> uniqueSet;
                 for (const auto& individual : population) {
-                    uniqueSet.insert(*individual);
+                    uniqueSet.insert(individual.get());
                 }
                 return uniqueSet.size();
             }
@@ -122,24 +120,24 @@ class Population {
 
         /// @brief Get a const reference to objective object
         /// @return const Objective<T>&
-        const std::unique_ptr<ObjectiveBase<typename T::value_type>>& getObjective() const {
+        const std::unique_ptr<ObjectiveBase>& getObjective() const {
             return objective;
         }
 
     private:
-        std::vector<std::shared_ptr<T>> population;
+        std::vector<std::shared_ptr<PhenotypeBase>> population;
         std::vector<int> selected;
-        const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective;
+        const std::unique_ptr<ObjectiveBase>& objective;
 
         /// @brief Sort population in ascending order by fitness value
         void sortAscending() {
-            std::sort(population.begin(), population.end(), [](const std::shared_ptr<T>& a, const std::shared_ptr<T>& b) {
+            std::sort(population.begin(), population.end(), [](const std::shared_ptr<PhenotypeBase>& a, const std::shared_ptr<PhenotypeBase>& b) {
                 return *a < *b;
             });
         }
 
         void sortDescending() {
-            std::sort(population.begin(), population.end(), [](const std::shared_ptr<T>& a, const std::shared_ptr<T>& b) {
+            std::sort(population.begin(), population.end(), [](const std::shared_ptr<PhenotypeBase>& a, const std::shared_ptr<PhenotypeBase>& b) {
                 return *a > *b;
             });
         }
@@ -147,7 +145,7 @@ class Population {
         /// @brief Get typename of type
         /// @return std::string typename
         std::string typeName() {
-            return demangle(typeid(T).name());
+            return demangle(typeid(PhenotypeBase).name());
         }
 
         /// @brief Demangle typename on GCC / G++ / Clang otherwise return

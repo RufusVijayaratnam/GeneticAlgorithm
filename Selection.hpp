@@ -2,18 +2,12 @@
 #define SELECTION_HPP
 #include <random>
 #include <algorithm>
-template<typename T>
-class Phenotype;
-
-template<typename T>
-class Population;
-
-template<typename T>
-class TerminationFlagManager;
+#include "TerminationCondition.hpp"
+#include "phenotype.hpp"
+#include "Population.hpp"
 
 namespace Selection {
-    template<typename T>
-    void linearRankingSelection(Population<T>& population, int numToSelect, TerminationManager<T>& terminationManager, bool verbose=false) {
+    void linearRankingSelection(Population& population, int numToSelect, TerminationManager& terminationManager, bool verbose=false) {
         if(terminationManager.checkTermination()) return;
         if(verbose) std::cout << "linearRankingSelection\n";
         population.clearSelected();
@@ -54,8 +48,7 @@ namespace Selection {
         }
     }
 
-    template<typename T>
-    void truncateSelection(Population<T>& population, int numToSelect, TerminationManager<T>& terminationManager) {
+    void truncateSelection(Population& population, int numToSelect, TerminationManager& terminationManager) {
         if(terminationManager.checkTermination()) return;
         population.clearSelected();
         if(population.size() < numToSelect) {

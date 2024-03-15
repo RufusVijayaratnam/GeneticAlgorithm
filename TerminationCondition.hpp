@@ -2,28 +2,22 @@
 #define TERMINATIONCONDITION_HPP
 #include <chrono>
 #include <memory>
+#include "Objective.hpp"
+#include "Population.hpp"
 
-template<typename T>
-class ObjectiveBase;
-
-template<typename T>
-class Population;
-
-template<typename T>
 class TerminationFlagBase {
     public:
         bool alreadyPrinted = false;
         virtual ~TerminationFlagBase() = default;
         virtual bool checkTermination() = 0;
-        virtual void setPopulation(const std::unique_ptr<Population<T>>& population) {return;}
-        virtual void setObjective(const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) {return;}
+        virtual void setPopulation(const std::unique_ptr<Population>& population) {return;}
+        virtual void setObjective(const std::unique_ptr<ObjectiveBase>& objective) {return;}
         virtual bool isHardstopFlag() const {return false;}
         virtual double checkProgress() const {return -1;}
         virtual void reportProgress() const {return;}
 };
 
-template<typename T>
-class TimeTerminationFlag : public TerminationFlagBase<T> {
+class TimeTerminationFlag : public TerminationFlagBase {
     private:
         std::chrono::steady_clock::time_point startTime;
         std::chrono::seconds timeLimit;
@@ -57,8 +51,7 @@ class TimeTerminationFlag : public TerminationFlagBase<T> {
         }
 };
 
-template<typename T>
-class IterationTerminationFlag : public TerminationFlagBase<T> {
+class IterationTerminationFlag : public TerminationFlagBase {
     private:
         int iterationLimit;
         int iterationCount = 0;
@@ -82,10 +75,9 @@ class IterationTerminationFlag : public TerminationFlagBase<T> {
         virtual void reportProgress() const override {std::cout << "iteration: " << iterationCount << " : " << iterationLimit << "\n";}
 };
 
-template<typename T>
-class FitnessFunctionCallTerminationFlag : public TerminationFlagBase<T> {
+class FitnessFunctionCallTerminationFlag : public TerminationFlagBase {
     private:
-        ObjectiveBase<typename T::value_type>* objective;
+        ObjectiveBase* objective;
         int callCountLimit;
 
     public:
@@ -105,7 +97,7 @@ class FitnessFunctionCallTerminationFlag : public TerminationFlagBase<T> {
             return false;
         }
 
-        virtual void setObjective(const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) override {this->objective = objective.get();}
+        virtual void setObjective(const std::unique_ptr<ObjectiveBase>& objective) override {this->objective = objective.get();}
 
         virtual bool isHardstopFlag() const override {return true;}
 
@@ -114,10 +106,9 @@ class FitnessFunctionCallTerminationFlag : public TerminationFlagBase<T> {
         virtual void reportProgress() const override {std::cout << "fitness function calls: " << objective->getCallCount() << " : " << callCountLimit << "\n";}
 };
 
-template<typename T>
-class MinimumPopulationTerminationFlag : public TerminationFlagBase<T> {
+class MinimumPopulationTerminationFlag : public TerminationFlagBase {
     private:
-        Population<T>* population;
+        Population* population;
         int minimumPopulation;
         
     public:
@@ -135,13 +126,12 @@ class MinimumPopulationTerminationFlag : public TerminationFlagBase<T> {
         return false;
     }
 
-    virtual void setPopulation(const std::unique_ptr<Population<T>>& population) override {this->population = population.get();}
+    virtual void setPopulation(const std::unique_ptr<Population>& population) override {this->population = population.get();}
 };
 
-template<typename T>
-class MaximumPopulationTerminationFlag : public TerminationFlagBase<T> {
+class MaximumPopulationTerminationFlag : public TerminationFlagBase {
     private:
-        Population<T>* population;
+        Population* population;
         int minimumPopulation;
 
     public:
@@ -159,13 +149,12 @@ class MaximumPopulationTerminationFlag : public TerminationFlagBase<T> {
         return false;
     }
 
-    virtual void setPopulation(const std::unique_ptr<Population<T>>& population) override {this->population = population.get();}
+    virtual void setPopulation(const std::unique_ptr<Population>& population) override {this->population = population.get();}
 };
 
-template<typename T>
-class MinimumUniquePopulationTerminationFlag : public TerminationFlagBase<T> {
+class MinimumUniquePopulationTerminationFlag : public TerminationFlagBase {
     private:
-        Population<T>* population;
+        Population* population;
         int minimumUnique;
     public:
 
@@ -185,20 +174,19 @@ class MinimumUniquePopulationTerminationFlag : public TerminationFlagBase<T> {
             return false;
         }
 
-    virtual void setPopulation(const std::unique_ptr<Population<T>>& population) override {this->population = population.get();}
+    virtual void setPopulation(const std::unique_ptr<Population>& population) override {this->population = population.get();}
 };
 
 
-template<typename T>
 class TerminationManager {
     private:
-        std::vector<std::unique_ptr<TerminationFlagBase<T>>> terminationFlags;
+        std::vector<std::unique_ptr<TerminationFlagBase>> terminationFlags;
         bool terminated = false;
         int lastReportIndex = -1;
         int numberOfReports;
     public:
         TerminationManager() {}
-        void addTerminationFlag(std::unique_ptr<TerminationFlagBase<T>> terminationFlag) {
+        void addTerminationFlag(std::unique_ptr<TerminationFlagBase> terminationFlag) {
             terminationFlags.push_back(std::move(terminationFlag));
         }
 
@@ -213,7 +201,7 @@ class TerminationManager {
             return false;
         }
 
-        void initialiseTerminationFlags(const std::unique_ptr<Population<T>>& population, const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective) {
+        void initialiseTerminationFlags(const std::unique_ptr<Population>& population, const std::unique_ptr<ObjectiveBase>& objective) {
             for(auto& flag : terminationFlags) {
                 flag->setPopulation(population);
                 flag->setObjective(objective);
@@ -222,9 +210,9 @@ class TerminationManager {
 
         void checkHasHardstopFlag() {
             for(auto& flag : terminationFlags) {
-                /* if(dynamic_cast<TimeTerminationFlag<T>>(flag)) return true;
-                if(dynamic_cast<FitnessFunctionCallTerminationFlag<T>>(flag)) return true;
-                if(dyanmic_cast<IterationTerminationFlag<T>>(flag)) return true;
+                /* if(dynamic_cast<TimeTerminationFlag>(flag)) return true;
+                if(dynamic_cast<FitnessFunctionCallTerminationFlag>(flag)) return true;
+                if(dyanmic_cast<IterationTerminationFlag>(flag)) return true;
                 */
                 if(flag->isHardstopFlag()) return;
             }
@@ -245,7 +233,7 @@ class TerminationManager {
         bool reportProgress() {
             if(numberOfReports == -1) return false;
             double maxProgress = 0.0;
-            TerminationFlagBase<T>* maxFlag = nullptr;
+            TerminationFlagBase* maxFlag = nullptr;
             for (const auto& flag : terminationFlags) {
                 if(!flag->isHardstopFlag()) continue;
                 double progress = flag->checkProgress();

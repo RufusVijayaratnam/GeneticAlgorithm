@@ -3,23 +3,22 @@
 #include <memory>
 #include <iostream>
 #include <iomanip>
+#include "Representation.hpp"
+#include "Objective.hpp"
 
-template<typename T>
-class ObjectiveBase;
-
-template<typename T>
 class PhenotypeBase {
     public:
-        /// @brief Used to allow correct typing in Population Class to support polymorphism
-        using value_type = T;
         /// @brief Virtual destructor for abstract base PhenotypeBase class
         virtual ~PhenotypeBase() {}
 
-        PhenotypeBase(std::vector<T> chromosome, const std::unique_ptr<ObjectiveBase<T>>& objective) : chromosome(chromosome) {
+        PhenotypeBase() {};
+
+        PhenotypeBase(std::unique_ptr<RepresentationBase> representation, const std::unique_ptr<ObjectiveBase>& objective) : representation(std::move(representation)) {
+            this->tempObj = objective.get();
             if(objective) {
                 score = objective->evaluate(*this);
             } else {
-                std::cerr << "In PhenotypeBase(std::vector<T> chromosome, std::unique_ptr<ObjectiveBase<T>>& objective)\n";
+                std::cerr << "In PhenotypeBase(std::unique_ptr<RepresentationBase> representation, std::unique_ptr<ObjectiveBase>& objective)\n";
                 std::cerr << "Could not construct object because objective pointer is nullptr\n";
                 std::cerr << "Check that the pointer passed to the constructor was not std::move()'d\nExiting program\n";
                 exit(0);
@@ -30,74 +29,76 @@ class PhenotypeBase {
         /// @param b Const reference to object to copy
         PhenotypeBase(const PhenotypeBase& b) {
             this->score = b.score;
-            this->chromosome = b.chromosome;
+            this->representation = b.representation->deepCopy();
         }
+
+        virtual std::shared_ptr<PhenotypeBase> emptyCopy() const = 0;
+
+        virtual std::shared_ptr<PhenotypeBase> deepCopy() const = 0;
 
         /// @brief A getter for the score of the phenotype when evaluated by
         /// fitness function
         /// @return double score
         virtual double getScore() const {return score;};
 
-        /// @brief Getter for the size of phenotype chromosome
-        /// @return int: size of phenotype chromosome
-        virtual int getChromosomeSize() const {return chromosome.size();};
+        /// @brief Getter for the size of phenotype representation
+        /// @return int: size of phenotype representation
+        virtual int getRepresentationSize() const {return representation->size();};
 
-        /// @brief Getter for the chromosome of phenotype
-        /// @return Const reference to phenotype chromosome
-        const std::vector<T>& getChromosome() const {return chromosome;}
+        /// @brief Getter for the representation of phenotype
+        /// @return Const reference to phenotype representation
+        const RepresentationBase& getRepresentation() const {return *representation;}
 
         //Operator overloads
         /// @brief Implementation of lesser operator for PhenotypeBase<T>
         /// @param b const reference to other operand
         /// @return bool return score < b.getScore()
-        virtual const bool operator<(PhenotypeBase const &b) {return this->score < b.getScore();}
+        virtual const bool operator<(PhenotypeBase const &b) const {return this->score < b.getScore();}
 
-        /// @brief Implementation of greater operator for PhenotypeBase<T>
+        /// @brief Implementation of greater operator for PhenotypeBase
         /// @param b const reference to other operand
         /// @return bool return score > b.getScore()
-        virtual const bool operator>(PhenotypeBase const &b) {return this->score > b.getScore();}
+        virtual const bool operator>(PhenotypeBase const &b) const {return this->score > b.getScore();}
 
         /// @brief Pure virtual operator==, user must overload
         /// @param b const reference to other operand
         /// @return bool
         virtual const bool operator==(PhenotypeBase const &b) const = 0;
 
-        /// @brief Prints the score of a chromosome, does not print any
+        /// @brief Prints the score of a representation, does not print any
         /// whitespace or newline
-        virtual void printScore() {std::cout << score;};
+        virtual void printScore() const {std::cout << score;};
 
-        /// @brief Prints the chromosome separated by commas inline
-        /// @param setWidth set width of spacing between commas, i.e with std::setw(setWidth)
-        virtual void printChromosomeInline(int setWidth=3) const {
-            for(T c : chromosome) {
-                std::cout << std::setw(setWidth) << c << ",";
-            }
-            std::cout << "\n";
+        /// @brief Prints the representation separated by commas inline
+        virtual void printRepresentation() const {
+            std::cout << *representation << "\n";
         }
 
-        /// @brief Set the chromosome of the Phenotype to a new chromosome
-        /// @param newChromosome New chromosome to set, must be same size as
-        /// original chromosome
+        virtual void setScore(double s) final {this->score = s;}
+        virtual void setRepresentation_NOEVALUATE(std::unique_ptr<RepresentationBase> rep) {
+            this->representation = std::move(rep);
+        }
+
+        /// @brief Set the representation of the Phenotype to a new representation
+        /// @param newRepresentation New representation to set, must be same size as
+        /// original representation
         /// @param objective Objective class which will be used to evaluate the phenotype
-        void setChromosome(std::vector<T>& newChromosome, const std::unique_ptr<ObjectiveBase<T>>& objective) {
-            if(newChromosome.size() != chromosome.size()) {
-                std::cerr << "chromosome.size() must be equal to newChromosome.size()\nchromosome NOT updated\n";
-                return;
-            }
-            chromosome = newChromosome;
+        void setRepresentation(std::unique_ptr<RepresentationBase> newRepresentation, const std::unique_ptr<ObjectiveBase>& objective) {
+            representation = std::move(newRepresentation);
             if(objective) {
                 score = objective->evaluate(*this);
             } else {
-                std::cerr << "In void setChromosome(std::vector<T>& newChromosome, std::unique_ptr<Objective<T>>& objective)\n";
-                std::cerr << "Could not change chromosome because objective pointer is nullptr\n";
-                std::cerr << "Check that the pointer passed to setChromosome() was not std::move()'d\nExiting program\n";
+                std::cerr << "In void setRepresentation(std::unique_ptr<RepresentationBase> newRepresentation, std::unique_ptr<Objective<T>>& objective)\n";
+                std::cerr << "Could not change representation because objective pointer is nullptr\n";
+                std::cerr << "Check that the pointer passed to setRepresentation() was not std::move()'d\nExiting program\n";
                 exit(0);
             }
         }
 
         //Member variables
         protected:
-            std::vector<T> chromosome;
+            std::unique_ptr<RepresentationBase> representation;
+            ObjectiveBase* tempObj;
             double score;
 };
 #endif

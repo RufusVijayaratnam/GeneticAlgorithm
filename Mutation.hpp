@@ -2,18 +2,14 @@
 #define MUTATION_HPP
 #include <random>
 
-template<typename T>
 class Population;
 
-template<typename T>
 class ObjectiveBase;
 
-template<typename T>
 class TerminationManager;
 
 namespace Variation {
-    template<typename T>
-    void rotationToRight(Population<T>& population, TerminationManager<T>& terminationManager, double mutationRate=0.3) {
+    void rotationToRight(Population& population, TerminationManager& terminationManager, double mutationRate=0.3) {
         if(mutationRate == 0) return;
         if(mutationRate < 0 || mutationRate > 1) {
             std::cerr << "rotationToRight\nMutation rate must be between [0,1], not " << mutationRate << "\n";
@@ -25,8 +21,8 @@ namespace Variation {
             srand(ct);
             seeded = true;
         }
-        int permutationSize = population[0].getChromosomeSize();
-        const std::vector<int> selected = population.getSelected();
+        int permutationSize = population[0].getRepresentationSize();
+        const std::vector<int> selected = population.getSelectedIndices();
         population.clearSelected();
 
         for(int sel : selected) {
@@ -39,13 +35,14 @@ namespace Variation {
             k = rand() % (permutationSize + 1);
             if(i == j) continue;
             
-            const std::vector<typename T::value_type>& permutation = population[sel].getChromosome();
-            std::vector<typename T::value_type> newPermutation = std::vector<typename T::value_type>(permutationSize, -1);
-            std::vector<typename T::value_type> partial;
+            const RepresentationBase& representation = population[sel].getRepresentation();
+            const std::vector<int>& permutation = representation.getIntegerVectorRepresentation();
+            std::vector<int> newPermutation = std::vector<int>(permutationSize, -1);
+            std::vector<int> partial;
             if(i <= j) {
                 int partialSize = abs(j - i) + 1;
                 if(k == partialSize) continue;
-                partial = std::vector<typename T::value_type>(partialSize, -1);
+                partial = std::vector<int>(partialSize, -1);
                 //Normal rotation
                 for(int n = 0; n < i; n++) {
                     newPermutation[n] = permutation[n];
@@ -77,20 +74,21 @@ namespace Variation {
                     newPermutation[n % permutationSize] = partial[n - i];
                 }
             }
-            const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective = population.getObjective();
-            population.getPopulationMember(sel).setChromosome(newPermutation, objective);
+            const std::unique_ptr<ObjectiveBase>& objective = population.getObjective();
+            std::unique_ptr<RepresentationBase> newRepresentation = representation.emptyCopy();
+            newRepresentation->setIntegerVectorRepresentation(newPermutation);
+            population.getPopulationMember(sel).setRepresentation(std::move(newRepresentation), objective);
         }
     }
 
-    template<typename T>
-    void twoOptSwap(Population<T>& population, TerminationManager<T>& terminationManager, double mutationRate=0.3) {
+    void twoOptSwap(Population& population, TerminationManager& terminationManager, double mutationRate=0.3) {
         if(mutationRate == 0) return;
         if(mutationRate < 0 || mutationRate > 1) {
             std::cerr << "rotationToRight\nMutation rate must be between [0,1], not " << mutationRate << "\n";
             exit(-1);
         }
 
-        int chromosomeSize = population[0].getChromosomeSize();
+        int chromosomeSize = population[0].getRepresentationSize();
         const std::vector<int> selected = population.getSelectedIndices();
 
         static std::random_device rd;
@@ -104,8 +102,9 @@ namespace Variation {
             double mutationProbability = realDist(mt);
             if(mutationRate < mutationProbability) continue;
 
-            const std::vector<typename T::value_type>& permutation = population[sel].getChromosome();
-            std::vector<typename T::value_type> newPermutation = std::vector<typename T::value_type>(chromosomeSize);
+            const RepresentationBase& representation = population[sel].getRepresentation();
+            const std::vector<int>& permutation = representation.getIntegerVectorRepresentation();
+            std::vector<int> newPermutation = std::vector<int>(chromosomeSize);
 
             int v1, v2;
             do {
@@ -131,8 +130,10 @@ namespace Variation {
                 newPermutation[i] = permutation[i];
             }
             
-            const std::unique_ptr<ObjectiveBase<typename T::value_type>>& objective = population.getObjective();
-            population.getPopulationMember(sel).setChromosome(newPermutation, objective);
+            const std::unique_ptr<ObjectiveBase>& objective = population.getObjective();
+            std::unique_ptr<RepresentationBase> newRepresentation = representation.emptyCopy();
+            newRepresentation->setIntegerVectorRepresentation(newPermutation);
+            population.getPopulationMember(sel).setRepresentation(std::move(newRepresentation), objective);
 
         }
 

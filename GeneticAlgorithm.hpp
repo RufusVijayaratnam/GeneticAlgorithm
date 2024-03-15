@@ -3,52 +3,43 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include "TerminationCondition.hpp"
+#include "Population.hpp"
+#include "Objective.hpp"
+#include "phenotype.hpp"
 
-template<typename T>
-class ObjectiveBase;
-
-template<typename T>
-class Population;
-
-template<typename T>
-class TerminationManager;
-
-template<typename T>
-class TerminationFlagBase;
-
-template<typename T>
 class GeneticAlgorithm {
     public:
         ~GeneticAlgorithm() {}
-        GeneticAlgorithm(std::vector<std::vector<typename T::value_type>>& chromosomes, std::unique_ptr<ObjectiveBase<typename T::value_type>> objective) 
+        GeneticAlgorithm(std::shared_ptr<PhenotypeBase> emptyPhenotype, std::vector<std::unique_ptr<RepresentationBase>> representations, std::unique_ptr<ObjectiveBase> objective) 
         : objective(std::move(objective)) {
-            this->population = std::unique_ptr<Population<T>>(new Population<T>(chromosomes, this->objective));
+            this->population = std::make_unique<Population>(emptyPhenotype, std::move(representations), this->objective);
         }
 
         virtual void run() final {
             setup();
-            T best = (*population).getPopulationMember(0);
+            std::shared_ptr<PhenotypeBase> best = population->getPopulationMember(0).deepCopy();
             while(!terminationManager.checkTermination()) {
                 geneticAlgorithm();
                 population->sort();
-                if(population->getPopulationMember(0) < best) {
-                    best = population->getPopulationMember(0);
+                if(population->getPopulationMember(0) < *best) {
+                    best = population->getPopulationMember(0).deepCopy();
                 }
                 if(terminationManager.reportProgress()) {
-                    std::cout << "Current best score: " << best.getScore() << "\n";
+                    std::cout << "Current best score: " << best->getScore() << "\n";
                 }
             }
-            std::cout << "Best solution score: " << best.getScore() << "\n";
-            population->getPopulationMember(0).printChromosomeInline();
+            std::cout << "Best solution score: " << best->getScore() << "\n";
+            population->getPopulationMember(0).printRepresentation();
         }
 
-        void addTerminationFlag(std::unique_ptr<TerminationFlagBase<T>> terminationFlag) {
+        void addTerminationFlag(std::unique_ptr<TerminationFlagBase> terminationFlag) {
             terminationManager.addTerminationFlag(std::move(terminationFlag));
         }
 
         /// @brief Get the population stored in the genetic algorithm.
         /// @return 
-        std::unique_ptr<Population<T>> getPopulation() {
+        std::unique_ptr<Population> getPopulation() {
             return std::move(population);
         }
 
@@ -56,9 +47,9 @@ class GeneticAlgorithm {
 
     protected:
         virtual void geneticAlgorithm() = 0;
-        std::unique_ptr<Population<T>> population;
-        std::unique_ptr<ObjectiveBase<typename T::value_type>> objective;
-        TerminationManager<T> terminationManager = TerminationManager<T>();
+        std::unique_ptr<Population> population;
+        std::unique_ptr<ObjectiveBase> objective;
+        TerminationManager terminationManager = TerminationManager();
         int reportCount = -1;
     private:
         void setup() {
